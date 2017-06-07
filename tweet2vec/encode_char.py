@@ -6,6 +6,7 @@ import sys
 import batch_char as batch
 import cPickle as pkl
 import io
+import re
 
 from t2v import tweet2vec, init_params, load_params
 from settings_char import N_BATCH, MAX_LENGTH, MAX_CLASSES
@@ -37,7 +38,12 @@ def main(args):
     Xt = []
     with io.open(data_path,'r',encoding='utf-8') as f:
         for line in f:
-            Xc = line.rstrip('\n')
+            # JK/QUARTZ 
+            # here taking the string only up to the tab character we added
+            # to every trump tweet line. Was:
+            # Xc = line.rstrip('\n')
+            Xc = re.match(r'^(.*)\t',line).group(1).rstrip('\n')
+            print (Xc)
             Xt.append(Xc[:MAX_LENGTH])
 
     # Model
@@ -66,30 +72,36 @@ def main(args):
 
     # Theano function
     print("Compiling theano functions...")
-    predict = theano.function([tweet,t_mask],predictions)
+    # JK/QUARTZ Disabling the prediction function, because we just need the vectoring
+    # predict = theano.function([tweet,t_mask],predictions)
     encode = theano.function([tweet,t_mask],embeddings)
 
     # Test
     print("Encoding...")
-    out_pred = []
+    # JK/QUARTZ Disabling the prediction lines, because we just need the vectoring
+    # out_pred = []
     out_emb = []
     numbatches = len(Xt)/N_BATCH + 1
     for i in range(numbatches):
         xr = Xt[N_BATCH*i:N_BATCH*(i+1)]
         x, x_m = batch.prepare_data(xr, chardict, n_chars=n_char)
-        p = predict(x,x_m)
+        # JK/QUARTZ Disabling the prediction function, because we just need the vectoring
+        # p = predict(x,x_m)
         e = encode(x,x_m)
-        ranks = np.argsort(p)[:,::-1]
+        # JK/QUARTZ Disabling the prediction lines, because we just need the vectoring
+        # ranks = np.argsort(p)[:,::-1]
 
         for idx, item in enumerate(xr):
-            out_pred.append(' '.join([inverse_labeldict[r] if r in inverse_labeldict else 'UNK' for r in ranks[idx,:5]]))
+            # JK/QUARTZ Disabling the prediction lines, because we just need the vectoring
+            # out_pred.append(' '.join([inverse_labeldict[r] if r in inverse_labeldict else 'UNK' for r in ranks[idx,:5]]))
             out_emb.append(e[idx,:])
 
     # Save
     print("Saving...")
-    with io.open('%s/predicted_tags.txt'%save_path,'w') as f:
-        for item in out_pred:
-            f.write(item + '\n')
+    # JK/QUARTZ Disabling the prediction lines, because we just need the vectoring
+    # with io.open('%s/predicted_tags.txt'%save_path,'w') as f:
+    #     for item in out_pred:
+    #         f.write(item + '\n')
     with open('%s/embeddings.npy'%save_path,'w') as f:
         np.save(f,np.asarray(out_emb))
 
